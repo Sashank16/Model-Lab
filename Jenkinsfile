@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         STAGING_BRANCH = 'staging'
-        PRODUCTION_BRANCH = 'main'
+        PRODUCTION_BRANCH = 'master'
         DOCKER_IMAGE_NAME = 'mymavenproject'
     }
 
@@ -36,10 +36,11 @@ pipeline {
                         script {
                             // Build and run the Docker image for staging
                             docker.image('openjdk:11-jre').inside {
-                                sh """
-                                docker build -t ${DOCKER_IMAGE_NAME}:staging .
-                                docker run -d --name ${DOCKER_IMAGE_NAME}-staging ${DOCKER_IMAGE_NAME}:staging
-                                """
+                               sh '''
+    docker build -t ${DOCKER_IMAGE_NAME}:staging .
+    docker run -d --name ${DOCKER_IMAGE_NAME}-staging ${DOCKER_IMAGE_NAME}:staging
+'''
+
                             }
                         }
                     }
@@ -53,10 +54,10 @@ pipeline {
                         script {
                             // Build and run the Docker image for production
                             docker.image('openjdk:11-jre').inside {
-                                sh """
+                                sh '''
                                 docker build -t ${DOCKER_IMAGE_NAME}:production .
                                 docker run -d --name ${DOCKER_IMAGE_NAME}-production ${DOCKER_IMAGE_NAME}:production
-                                """
+                                '''
                             }
                         }
                     }
