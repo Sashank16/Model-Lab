@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: "${env.GIT_BRANCH}", url: 'https://github.com/your-repo.git'
+                git branch: "${env.GIT_BRANCH}", url: 'https://github.com/Sashank16/Model-Lab.git'
             }
         }
 
@@ -26,35 +26,39 @@ pipeline {
             }
         }
 
-        stage('Deploy to Staging') {
-            when {
-                branch 'staging' // Deploy only on the staging branch
-            }
-            steps {
-                script {
-                    // Build and run the Docker image for staging
-                    docker.image('openjdk:11-jre').inside {
-                        // Build Docker image for staging
-                        sh 'docker build -t ${DOCKER_IMAGE_NAME}:staging .'
-                        // Run the Docker container for staging
-                        sh 'docker run -d --name ${DOCKER_IMAGE_NAME}-staging ${DOCKER_IMAGE_NAME}:staging'
+        stage('Deploy') {
+            parallel {
+                stage('Deploy to Staging') {
+                    when {
+                        branch 'staging' // Deploy only on the staging branch
+                    }
+                    steps {
+                        script {
+                            // Build and run the Docker image for staging
+                            docker.image('openjdk:11-jre').inside {
+                                sh """
+                                docker build -t ${DOCKER_IMAGE_NAME}:staging .
+                                docker run -d --name ${DOCKER_IMAGE_NAME}-staging ${DOCKER_IMAGE_NAME}:staging
+                                """
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        stage('Deploy to Production') {
-            when {
-                branch 'main' // Deploy only on the main branch
-            }
-            steps {
-                script {
-                    // Build and run the Docker image for production
-                    docker.image('openjdk:11-jre').inside {
-                        // Build Docker image for production
-                        sh 'docker build -t ${DOCKER_IMAGE_NAME}:production .'
-                        // Run the Docker container for production
-                        sh 'docker run -d --name ${DOCKER_IMAGE_NAME}-production ${DOCKER_IMAGE_NAME}:production'
+                stage('Deploy to Production') {
+                    when {
+                        branch 'main' // Deploy only on the main branch
+                    }
+                    steps {
+                        script {
+                            // Build and run the Docker image for production
+                            docker.image('openjdk:11-jre').inside {
+                                sh """
+                                docker build -t ${DOCKER_IMAGE_NAME}:production .
+                                docker run -d --name ${DOCKER_IMAGE_NAME}-production ${DOCKER_IMAGE_NAME}:production
+                                """
+                            }
+                        }
                     }
                 }
             }
@@ -74,9 +78,19 @@ pipeline {
         always {
             script {
                 // Clean up containers after the pipeline is complete
-                sh 'docker stop $(docker ps -q --filter ancestor=${DOCKER_IMAGE_NAME}:staging --filter ancestor=${DOCKER_IMAGE_NAME}:production) || true'
-                sh 'docker rm $(docker ps -a -q --filter ancestor=${DOCKER_IMAGE_NAME}:staging --filter ancestor=${DOCKER_IMAGE_NAME}:production) || true'
+                sh """
+                docker stop $(docker ps -q --filter ancestor=${DOCKER_IMAGE_NAME}:staging --filter ancestor=${DOCKER_IMAGE_NAME}:production) || true
+                docker rm $(docker ps -a -q --filter ancestor=${DOCKER_IMAGE_NAME}:staging --filter ancestor=${DOCKER_IMAGE_NAME}:production) || true
+                """
             }
+        }
+        success {
+            // Send a notification or other actions on success (optional)
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            // Send a failure notification (optional)
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
