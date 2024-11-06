@@ -79,10 +79,10 @@ pipeline {
         always {
             script {
                 // Clean up containers after the pipeline is complete
-                sh """
+                sh '''
                 docker stop $(docker ps -q --filter ancestor=${DOCKER_IMAGE_NAME}:staging --filter ancestor=${DOCKER_IMAGE_NAME}:production) || true
                 docker rm $(docker ps -a -q --filter ancestor=${DOCKER_IMAGE_NAME}:staging --filter ancestor=${DOCKER_IMAGE_NAME}:production) || true
-                """
+                '''
             }
         }
         success {
